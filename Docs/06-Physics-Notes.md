@@ -168,3 +168,55 @@ Space toggles: attach when free, release when attached. Release removes the join
 3. Press **Space**. The line disappears (released). Press Space again: it reattaches at the current separation with no movement.
 4. Hoist with Q to about mid-height, then press Space. The beam drops and lands. It must not pass through the floor.
 5. Nudge test: while hanging, select `Support` and set its Position X to `1`, then back to `0`. The beam swings and the swing decays only slowly. That is the pendulum the physics gate will measure.
+
+## 5. Piece 4 — Tension and cable failure
+
+Runtime: tension measurement and break rating in `CableController.cs`; display in `PrototypeHUD.cs`.
+
+### Where the tension number comes from
+
+Each physics step PhysX computes the force the joint had to apply to keep the beam inside the distance limit. Unity exposes it as `Joint.currentForce`. The cable script reads its magnitude every fixed step and stores it as the tension in newtons. When the cable is slack the constraint is inactive and the force is zero, which is correct: a slack cable carries no load.
+
+This is the same quantity Unity compares against `breakForce`. Gauge and failure are therefore two views of one number from one constraint. There is no second formula deciding when the cable breaks.
+
+### Reference values
+
+| Situation | Expected reading | Why |
+| --- | --- | --- |
+| Hanging at rest | about 4.9 kN | `T = mg = 500 × 9.81 = 4,905 N` |
+| Raising at full winch speed after the ramp | about 4.9 kN | Constant velocity: no net force beyond weight |
+| During the winch ramp up (4 m/s²) | up to about 6.9 kN | `T = m(g + a) = 500 × 13.81` |
+| Swinging through the bottom of an arc | above 4.9 kN | Adds the centripetal term `mv²/L` |
+| Resting on the floor, taut cable | about 0 kN | The floor carries the weight |
+
+The GDD formula `T = mg cos θ + mv²/L` is the fixed-support, fixed-length case. The engine result is the general case: it also includes support motion, hoisting, and the beam's rotation. The formula is used as a cross-check at rest and at the bottom of a swing, not as a second authority.
+
+### Break rating
+
+`breakForce` is 10,000 N, the GDD rating. PhysX checks it every step; when exceeded, Unity destroys the joint and calls `OnJointBreak` with the force that broke it. The script records the Broken state, raises an event, and does nothing else: the beam falls under whatever motion it had. No pose is reset.
+
+### Shock loading
+
+If the beam is dropped and the cable catches it, the constraint must remove the beam's downward velocity within one step. That force is `m·Δv / Δt`; for 500 kg stopped from 3 m/s in 0.02 s it is 75 kN, far above the rating. A real cable would also fail under such a snatch load, so this is expected behaviour, not a solver artefact. It is why the winch rate is bounded and why gameplay must keep the cable taut while lowering.
+
+### What is presentation only
+
+The HUD smooths the displayed tension with a short time constant (0.08 s) so the number is readable. The break check and the peak value use the raw per-step force. Display is in kN; physics is in N.
+
+### Build checklist (Editor)
+
+1. Right-click `LabRoot`, UI, Canvas. Unity creates `Canvas` and an `EventSystem`. Leave both.
+2. Right-click `Canvas`, UI, Text - TextMeshPro. If a window offers **Import TMP Essentials**, click it, wait, then close the window.
+3. Rename the new object `HUDText`. In its Rect Transform, click the anchor square and choose top-left (hold Shift and Alt while clicking to also set pivot and position). Set Pos X `16`, Pos Y `-16`, Width `900`, Height `160`.
+4. In the TextMeshPro component set Font Size `22`, tick **Auto Size** off, and set Vertical Alignment to Top. Text can stay as is; the script overwrites it.
+5. Right-click `LabRoot`, Create Empty, name it `HUD`. Add Component → **Prototype HUD**. Drag `Beam` onto Cable, `Crane` onto Crane, and `HUDText` onto Text.
+6. Save the scene.
+
+### How to check it
+
+1. Play. With the beam on the floor the HUD shows ATTACHED (taut), tension near 0.00 kN.
+2. Hold Q. Tension rises toward about 6.9 kN during the ramp, then settles near 4.9 kN while rising steadily. Let go: it stays near 4.9 kN, peak shows the ramp maximum.
+3. Hold E until the beam rests on the floor and the line goes slack: state reads slack, tension 0.
+4. Nudge the support (Position X to 1 and back). Tension oscillates above and below 4.9 kN with the swing, highest at the bottom of each pass.
+5. Deliberate break: stop Play, select `Beam`, set Break Force N on the cable component to `6000`, Play, hold Q from the floor. The cable breaks during the ramp, the HUD reads BROKEN, the Console logs the force, the beam stays down. Stop Play; the value returns to 10,000 automatically.
+6. Snatch test at the real rating: Play, hoist to about 3 m off the floor, press Space to release, and press Space again while the beam is still falling. The cable catches it and breaks. Expected: the catch force is a shock load far above 10 kN.

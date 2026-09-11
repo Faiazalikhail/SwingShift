@@ -2,6 +2,8 @@ using UnityEngine;
 
 namespace SwingShift
 {
+    public enum CableState { Unattached, Attached, Released, Broken }
+
     /// --- summary
     /// Owns the physical cable between the hook and the beam.
     
@@ -30,6 +32,9 @@ namespace SwingShift
         [Tooltip("Longest permitted cable length in metres.")]
         [SerializeField] private float maxLength = 10f;
 
+        [Tooltip("Cable break rating in newtons. GDD: 10,000 N. The joint breaks when its constraint force exceeds this in a physics step.")]
+        [SerializeField] private float breakForceN = 10000f;
+
         [Header("Lab options")]
         [Tooltip("Attach automatically when the scene starts (used in PhysicsLab).")]
         [SerializeField] private bool attachOnStart = true;
@@ -38,6 +43,24 @@ namespace SwingShift
 
         /// True while a joint exists between the beam and the support.
         public bool IsAttached => joint != null;
+
+        /// Unattached, Attached, Released, or Broken. Only this component changes it.
+        public CableState State { get; private set; } = CableState.Unattached;
+
+        /// Force the cable constraint applied in the last physics step, in newtons. Zero when slack or detached.
+        public float TensionN { get; private set; }
+
+        /// Highest tension seen since the last attach, in newtons.
+        public float PeakTensionN { get; private set; }
+
+        /// True when attached but the anchors are closer than the permitted length (the cable carries no load).
+        public bool IsSlack => IsAttached && ActualSeparation < PermittedLength - 0.02f;
+
+        /// Cable break rating in newtons.
+        public float BreakForceN => breakForceN;
+
+        /// Raised once when the joint breaks under load.
+        public event System.Action Broke;
 
         /// The permitted cable length in metres (the joint's distance limit).
         public float PermittedLength { get; private set; }
@@ -101,11 +124,31 @@ namespace SwingShift
 
             // Beam and support never collide through the joint; the cable, not contact, couples them.
             joint.enableCollision = false;
-            joint.breakForce = Mathf.Infinity; // the break rating is set in the tension piece
+
+            // Failure comes from the same constraint that produces the tension reading.
+            // Torque is unlimited: the angular axes are free, so the joint never carries torque.
+            joint.breakForce = breakForceN;
             joint.breakTorque = Mathf.Infinity;
 
             SetPermittedLength(Mathf.Clamp(separation, minLength, maxLength));
+            State = CableState.Attached;
+            TensionN = 0f;
+            PeakTensionN = 0f;
             return true;
+        }
+
+        private void FixedUpdate()
+        {
+            if (!IsAttached)
+            {
+                TensionN = 0f;
+                return;
+            }
+
+            // currentForce is the constraint force from the previous step. Its magnitude is the
+            // same quantity Unity compares against breakForce, so gauge and failure agree by construction.
+            TensionN = joint.currentForce.magnitude;
+            if (TensionN > PeakTensionN) PeakTensionN = TensionN;
         }
 
         
@@ -116,6 +159,8 @@ namespace SwingShift
             if (!IsAttached) return;
             Destroy(joint);
             joint = null;
+            State = CableState.Released;
+            TensionN = 0f;
         }
 
         /// Sets the distance limit directly, clamped to the cable range.
@@ -151,7 +196,11 @@ namespace SwingShift
         {
             // Unity destroys the joint itself; drop our reference so IsAttached becomes false.
             joint = null;
-            Debug.Log($"[Cable] Joint broke at {breakForce:F0} N.", this);
+            State = CableState.Broken;
+            if (breakForce > PeakTensionN) PeakTensionN = breakForce;
+            TensionN = 0f;
+            Debug.Log($"[Cable] Cable broke at {breakForce:F0} N (rating {breakForceN:F0} N).", this);
+            Broke?.Invoke();
         }
     }
 }

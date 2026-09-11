@@ -6,7 +6,7 @@ namespace SwingShift
     /// Turns raw keyboard input into intent for the active control mode.
     /// Owns the generated SwingShiftActions instance. Gameplay components read intent from here;
     /// they never touch the Input System directly.
-    ///
+    /// 
     /// Input events arrive between rendered frames, but physics commands are applied in FixedUpdate.
     /// Button presses are therefore latched until a physics component consumes them, so a quick tap
     /// is never lost between two physics steps.
