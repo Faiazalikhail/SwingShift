@@ -4,7 +4,7 @@
 
 ## 1. Approach
 
-Use Unity `6000.3.23f1`, a basic 3D project on the Built-in render pipeline, and keyboard input through the Input System package (the legacy Input Manager is disabled). Keep that render pipeline for the entire prototype. Avoid package upgrades during the delivery week.
+Use Unity `6000.3.23f1`, a basic 3D project on the Built-in render pipeline, and keyboard input through the Input System package (the legacy Input Manager is disabled). Keep that render pipeline for the entire prototype. Avoid package upgrades once implementation has started.
 
 Use metres, kilograms, and seconds. Start with Unity's standard fixed physics step and adjust only in response to measured instability. Read input each rendered frame, apply physics commands on fixed steps, and keep presentation updates separate.
 

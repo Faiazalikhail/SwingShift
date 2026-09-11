@@ -45,7 +45,7 @@ Placed by hand in the Unity Editor. The build checklist is at the end of this se
 ### What this piece does not claim
 
 - No cable exists yet; the beam simply rests on the floor under gravity.
-- The support has no inertia response. The real crane arm and trolley will be dynamic bodies driven by motors with finite torque (Session 2), which is where the "load resists acceleration" behaviour comes from.
+- The support has no inertia response. The real crane arm and trolley will be dynamic bodies driven by motors with finite torque (Milestone 2), which is where the "load resists acceleration" behaviour comes from.
 - The beam's internal structure is not modelled. Deflection, bending, and material stress are outside the GDD scope.
 
 ### Build checklist (Editor)
@@ -152,7 +152,7 @@ Space toggles: attach when free, release when attached. Release removes the join
 
 ### What this piece does not claim
 
-- No hook proximity check yet: in the lab the beam is always under the hook. The game version requires the hook within a small distance of the anchor (Session 2).
+- No hook proximity check yet: in the lab the beam is always under the hook. The game version requires the hook within a small distance of the anchor (Milestone 2).
 - No tension reading or break yet (piece 4).
 
 ### Build checklist (Editor)

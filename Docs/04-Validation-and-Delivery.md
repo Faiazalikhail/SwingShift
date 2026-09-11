@@ -48,7 +48,7 @@ The 10% diagnostic tolerance is proposed, not a grading requirement. Formula com
 | G17 | Hard impact followed by soft contact | Hard impact is retained; no false clean result. |
 | G18 | Cable overload | One cable-failure outcome; displayed load and break behaviour remain physically consistent. |
 | G19 | Timer expires | One timeout outcome; controls stop affecting the run. |
-| G20 | Completion at deadline | Recorded event timing and documented precedence produce one consistent outcome. |
+| G20 | Completion as the timer expires | Recorded event timing and documented precedence produce one consistent outcome. |
 | G21 | Restart from every result | Original scene, timer, mode, attachment state, and outcome restored. |
 | G22 | Ten consecutive restarts | No stale references, duplicate events, or worsening behaviour. |
 | G23 | Change rendering frame rate | Control rates, timer, and outcome rules remain consistent; exact physics trajectories need not be identical. |

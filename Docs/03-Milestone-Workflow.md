@@ -1,47 +1,46 @@
-# 03 — One-Week Workflow
+# 03 — Milestone Workflow
 
 [Back to project index](../README.md)
 
-## 1. Schedule assumptions
+## 1. Approach
 
-- One week is available, alongside work, study, and other projects.
-- Actual available work blocks and exact submission time remain unconfirmed.
-- Baseline below totals **11.5 focused development hours**, plus **two hours of contingency**.
-- These are estimates for project work, not a claim that all coding requires the user's continuous attention.
-- Re-estimate after Session 1. Do not compensate for a failed physics gate by skipping final build testing.
+- Work is organised into milestones, each with a concrete deliverable and a pass/fail gate.
+- A milestone is complete only when its gate has been checked in the Editor and recorded in the progress log.
+- The physics gate for the cable comes first; nothing is built on top of it until it passes.
+- A failed physics gate is resolved in the isolated lab rig before dependent work continues. Delivery testing is never skipped to compensate.
 
-## 2. Milestone schedule
+## 2. Milestones
 
-| Day / session | Budget | Deliverable | Gate |
-| --- | --- | --- | --- |
-| 1 — Foundation and cable proof | 2 h | Initial Windows build and working suspended-beam rig | Cable hangs, swings, hoists, releases, and reports plausible tension. |
-| 2 — Complete lifting assembly | 2.5 h | Fixed-base crane with arm, trolley, attachment, and break handling | Pick up, transfer, lower, release; deliberate overload is testable. |
-| 3 — Truck and mode integration | 2 h | Drive, park, operate, return to travel configuration | No simultaneous driving and lifting; camera supports both modes. |
-| 4 — Complete run | 2 h | Target, impact grade, timer, results, restart | Full run can succeed and each failure can be reproduced. |
-| 5 — Tuning and usability | 1.5 h | Readable, repeatable gameplay | Several full runs without unexplained behaviour. |
-| 6 — Build and delivery checks | 1.5 h | Tested Windows release candidate and project handoff | Packaged game passes the delivery checklist. |
-| 7 — Contingency | 2 h reserved | Repairs for demonstrated blockers | Final build remains tested after fixes. |
+| Milestone | Deliverable | Gate |
+| --- | --- | --- |
+| 1 — Foundation and cable proof | Configured project and working suspended-beam rig | Cable hangs, swings, hoists, releases, and reports plausible tension. |
+| 2 — Complete lifting assembly | Fixed-base crane with arm, trolley, attachment, and break handling | Pick up, transfer, lower, release; deliberate overload is testable. |
+| 3 — Truck and mode integration | Drive, park, operate, return to travel configuration | No simultaneous driving and lifting; camera supports both modes. |
+| 4 — Complete run | Target, impact grade, timer, results, restart | Full run can succeed and each failure can be reproduced. |
+| 5 — Tuning and usability | Readable, repeatable gameplay | Several full runs without unexplained behaviour. |
+| 6 — Build and delivery checks | Tested Windows release candidate and project handoff | Packaged game passes the delivery checklist. |
+| 7 — Stabilisation | Repairs for demonstrated blockers only | Final build remains tested after fixes. |
 
-**Feature-complete target: end of day four.** Days five and six are required work, not optional polish.
+**Feature-complete point: end of milestone four.** Milestones five and six are required work, not optional polish.
 
-## 3. Session checklists
+## 3. Milestone checklists
 
-### Session 1 — Foundation and cable proof
+### Milestone 1 — Foundation and cable proof
 
-- [ ] Create a basic 3D project using the selected installed editor.
-- [ ] Confirm the Windows build module is available; resolve setup blockers immediately.
-- [ ] Set up source control, Unity ignore rules, and readable asset serialization.
-- [ ] Create `PhysicsLab` and `Prototype` scenes.
-- [ ] Build and launch an initial Windows executable.
-- [ ] Create a fixed support, simple suspended body, beam, and floor.
-- [ ] Add cable length control, release, and tension diagnostics.
-- [ ] Check slack behaviour, attachment initialization, and rest tension.
-- [ ] Run the physics gate in the validation document.
-- [ ] Save a known-good checkpoint and update the effort estimate.
+- [x] Create a basic 3D project using the selected installed editor.
+- [x] Confirm the Windows build module is available; resolve setup blockers immediately.
+- [x] Set up source control, Unity ignore rules, and readable asset serialization.
+- [x] Create `PhysicsLab` and `Prototype` scenes.
+- [x] Create a fixed support, simple suspended body, beam, and floor.
+- [x] Add cable length control, release, and tension diagnostics.
+- [x] Check slack behaviour, attachment initialization, and rest tension.
+- [ ] Tune cable elasticity so brief catches do not break the cable at the rating.
+- [ ] Run the physics gate in the validation document, including the pendulum period check.
+- [ ] Save a known-good checkpoint.
 
-**Stop condition:** If ordinary hoisting or attachment produces unresolved instability, keep working in the isolated rig. Record the exact reproduction steps and revise the schedule before starting truck work.
+**Stop condition:** If ordinary hoisting or attachment produces unresolved instability, keep working in the isolated rig. Record the exact reproduction steps before starting truck work.
 
-### Session 2 — Lifting assembly
+### Milestone 2 — Lifting assembly
 
 - [ ] Add powered arm rotation and constrained trolley travel.
 - [ ] Add hook proximity feedback and valid attachment handling.
@@ -52,7 +51,7 @@
 - [ ] Perform a complete transfer with the base fixed.
 - [ ] Save a checkpoint.
 
-### Session 3 — Truck and modes
+### Milestone 3 — Truck and modes
 
 - [ ] Add chassis, wheels, steering, throttle, and braking.
 - [ ] Check the assembly mass and centre of mass.
@@ -63,7 +62,7 @@
 - [ ] Drive to the pickup, park, attach, and lift.
 - [ ] Save a checkpoint.
 
-### Session 4 — Complete run
+### Milestone 4 — Complete run
 
 - [ ] Measure incoming contact speed with rotation accounted for.
 - [ ] Add damage handling after the initial lift.
@@ -74,7 +73,7 @@
 - [ ] Reproduce success, rough placement, cable failure, damage, and timeout.
 - [ ] Create a feature-complete build and save a checkpoint.
 
-### Session 5 — Tuning and usability
+### Milestone 5 — Tuning and usability
 
 - [ ] Test braking distance and low-speed steering.
 - [ ] Tune arm/trolley acceleration and hoist speed.
@@ -85,7 +84,7 @@
 - [ ] Make blocked actions understandable through short prompts.
 - [ ] Freeze features and save a checkpoint.
 
-### Session 6 — Delivery
+### Milestone 6 — Delivery
 
 - [ ] Run the full validation matrix.
 - [ ] Create the Windows release candidate.
@@ -95,7 +94,7 @@
 - [ ] Verify the project and build packages are complete.
 - [ ] Record the final tested revision and build location.
 
-### Session 7 — Contingency
+### Milestone 7 — Stabilisation
 
 - [ ] Address only reproducible delivery blockers.
 - [ ] Re-run affected tests after each fix.
@@ -115,16 +114,16 @@ End each session with a concrete next action, any blocker, and the current build
 
 ## 5. Division of work
 
-| Assistant | User |
+| Assistant | Author |
 | --- | --- |
-| Implement code and supported scene setup | Provide the rubric and exact deadline if available |
+| Draft code and supporting notes | Build scenes and levels in the Editor; supply the rubric if available |
 | Inspect diagnostics and repair reproducible bugs | Give short feedback on control feel and clarity |
 | Maintain checks and planning records | Test the build on the intended submission machine |
 | Prepare build and handoff instructions | Make any required course submission |
 
-Do not mark a build or playtest as passed without evidence from that environment. If an editor interaction cannot be performed with available tools, provide one short, exact setup checklist and continue independent work.
+Do not mark a build or playtest as passed without evidence from that environment. Where an Editor interaction is needed, provide one short, exact setup checklist and continue independent work.
 
-## 6. Time-pressure policy
+## 6. Scope priority policy
 
 ### Simplify first
 

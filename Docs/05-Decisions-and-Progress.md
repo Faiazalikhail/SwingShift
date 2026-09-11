@@ -14,7 +14,7 @@
 | Full gameplay loop | Not started |
 | Standalone build validation | Not started |
 
-**Next action:** Session 1, piece 5: cable elasticity tuning (soft joint limit) so brief snatch loads do not break the cable at the rating, then the physics gate with a pendulum period probe. Windows builds are deferred until the user requests one.
+**Next action:** Milestone 1, piece 5: cable elasticity tuning (soft joint limit) so brief snatch loads do not break the cable at the rating, then the physics gate with a pendulum period probe. Windows builds are deferred until the user requests one.
 
 ## 2. Confirmed direction
 
@@ -22,7 +22,6 @@
 | --- | --- | --- |
 | C01 | Build the prototype in Unity | User request |
 | C02 | Keep development within the GDD prototype scope | User request |
-| C03 | Plan for one week around work, study, and other projects | User clarification |
 | C04 | Store the plan as structured Markdown files | User request |
 | C05 | One crane, beam, target, and 90-second runs | GDD |
 | C06 | Preserve the four visible physics systems | GDD |
@@ -47,7 +46,7 @@ These are the current planning defaults. They are not additional claims about th
 | D12 | Grade incoming normal contact speed, including rotation | Gives a concrete impact definition | Impact implementation |
 | D13 | Defer Windows builds until the user requests one; an empty scene proves nothing about build-only failures | User decision 2026-09-11 | First build request |
 | D14 | Beam is a 6 × 0.3 × 0.2 m box collider with mass set to 500 kg; inertia computed by Unity from the box | Envelope of a structural beam; see Physics Notes §2 | Swing and impact testing |
-| D15 | Lab support is a kinematic rigidbody (ideal fixed support); the real trolley will be dynamic later | Matches the fixed-support pendulum reference used for the gate | Session 2 |
+| D15 | Lab support is a kinematic rigidbody (ideal fixed support); the real trolley will be dynamic later | Matches the fixed-support pendulum reference used for the gate | Milestone 2 |
 | D16 | Beam uses Continuous Dynamic collision detection and zero linear damping | Prevents floor tunnelling on a cable break; keeps slowing causes physical | Stability checks |
 | D17 | Scenes and levels are built by hand in the Editor; no editor scripts generate content. Runtime gameplay scripts only. | User decision 2026-09-11: keeps the level work reviewable as authored work | Ongoing |
 
@@ -55,8 +54,6 @@ These are the current planning defaults. They are not additional claims about th
 
 | Question | Why it matters | Current handling |
 | --- | --- | --- |
-| Exact deadline and submission time? | Determines final freeze and packaging time | Use the relative seven-day schedule. |
-| Actual available focused hours? | Determines feasibility and session sizes | Use provisional 11.5 h baseline plus 2 h reserve. |
 | Additional grading rubric? | May constrain physics implementation or evidence | Do not claim rubric compliance; review when supplied. |
 | Required Unity version or submission format? | May affect project creation and handoff | Use the installed editor unless requirements differ. |
 | Does the course require custom physics calculations rather than engine joints? | Could change the architecture materially | Surface this early if a rubric specifies it. |
@@ -72,7 +69,7 @@ These questions do not prevent organizing the project or preparing the first val
 | Overload is unreachable or too frequent | Normal play always survives or always breaks | Measure forces; tune acceleration and level demands while recording parameter changes. |
 | False impact grade | Hard strike registers gentle, especially at beam tips | Verify pre-impact motion and angular contribution. |
 | Impossible delivery | Pickup or target exceeds reach/clearance | Validate the full path before finalizing layout. |
-| Session estimate exceeded | Physics gate not passed within initial budget | Re-estimate immediately; preserve build-testing time. |
+| Physics gate does not pass | Cable instability persists in the lab rig | Resolve in the isolated rig before dependent work; never skip build testing. |
 | Build-only failure | Editor works but player fails | Build on day one and test again at feature completion. |
 | Scope expansion | Work shifts to assets, extra systems, or polish | Compare against the scope contract; defer unrelated additions. |
 
@@ -82,12 +79,12 @@ Append a short entry after each work session.
 
 | Date / session | Completed | Evidence / checkpoint | Blocker | Next action |
 | --- | --- | --- | --- | --- |
-| 2026-09-11 — Planning | Reviewed GDD and organized implementation plan | Markdown documents in this repository | Actual available hours and rubric unconfirmed | Start Session 1 when requested |
-| 2026-09-11 — Session 1 (part 1) | Created the Unity project, applied project settings, added Input System and UGUI packages, created folder layout, `PhysicsLab` and `Prototype` scenes, Build Settings scene list, and git repository with Unity ignore rules | Initial git commit; headless editor run compiled with zero errors | None | Build and launch an initial Windows executable, then start the suspended-beam rig |
-| 2026-09-11 — Session 1 (piece 1) | Lab rig built by hand in the Editor per `06-Physics-Notes.md` §2; physics notes started | Play test: beam rests on the floor, no jitter (user confirmed). Beam mass was found at 1 and corrected to 500. | None | Piece 2: cable joint via `CableController` |
-| 2026-09-11 — Session 1 (piece 2) | `CableController` (ConfigurableJoint distance limit, attach from current separation, release preserves velocity, LineRenderer presentation) added to the beam by hand; physics notes §3 | Play test: slack test, hang test pass; beam hangs level, no jitter (user confirmed) | None | Piece 3: hoist and release from input |
-| 2026-09-11 — Session 1 (piece 3) | Input Actions asset (Crane map), `PlayerInputRouter` (latched intent), `CraneController` (bounded, ramped hoist; Space attach/release); physics notes §4 | Play test: lift, lower to slack, release/reattach, drop lands on floor, nudge swing all pass (user confirmed) | None | Piece 4: tension gauge and break |
-| 2026-09-11 — Session 1 (piece 4) | Tension from `Joint.currentForce`, 10 kN `breakForce`, `CableState`, `PrototypeHUD` (TMP); physics notes §5 | HUD reads 4.90 kN at rest (expected 4.905 kN); deliberate break at 6 kN rating and snatch test both break (user confirmed) | Hard limit makes any release-and-reattach a snatch load that breaks the cable; needs elasticity tuning | Piece 5: soft limit tuning and physics gate |
+| 2026-09-11 — Planning | Reviewed GDD and organized implementation plan | Markdown documents in this repository | Rubric unconfirmed | Start Milestone 1 |
+| 2026-09-11 — Milestone 1 (part 1) | Created the Unity project, applied project settings, added Input System and UGUI packages, created folder layout, `PhysicsLab` and `Prototype` scenes, Build Settings scene list, and git repository with Unity ignore rules | Initial git commit; headless editor run compiled with zero errors | None | Build and launch an initial Windows executable, then start the suspended-beam rig |
+| 2026-09-11 — Milestone 1 (piece 1) | Lab rig built by hand in the Editor per `06-Physics-Notes.md` §2; physics notes started | Play test: beam rests on the floor, no jitter (user confirmed). Beam mass was found at 1 and corrected to 500. | None | Piece 2: cable joint via `CableController` |
+| 2026-09-11 — Milestone 1 (piece 2) | `CableController` (ConfigurableJoint distance limit, attach from current separation, release preserves velocity, LineRenderer presentation) added to the beam by hand; physics notes §3 | Play test: slack test, hang test pass; beam hangs level, no jitter (user confirmed) | None | Piece 3: hoist and release from input |
+| 2026-09-11 — Milestone 1 (piece 3) | Input Actions asset (Crane map), `PlayerInputRouter` (latched intent), `CraneController` (bounded, ramped hoist; Space attach/release); physics notes §4 | Play test: lift, lower to slack, release/reattach, drop lands on floor, nudge swing all pass (user confirmed) | None | Piece 4: tension gauge and break |
+| 2026-09-11 — Milestone 1 (piece 4) | Tension from `Joint.currentForce`, 10 kN `breakForce`, `CableState`, `PrototypeHUD` (TMP); physics notes §5 | HUD reads 4.90 kN at rest (expected 4.905 kN); deliberate break at 6 kN rating and snatch test both break (user confirmed) | Hard limit makes any release-and-reattach a snatch load that breaks the cable; needs elasticity tuning | Piece 5: soft limit tuning and physics gate |
 
 ## 7. Change log
 
