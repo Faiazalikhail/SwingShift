@@ -47,3 +47,6 @@ crashlytics-build.properties
 # OS files
 .DS_Store
 Thumbs.db
+
+# Visual Studio / Copilot tooling noise
+/.github/copilot-instructions.md

@@ -64,3 +64,62 @@ Hierarchy layout: an empty `LabRoot` holding `Floor`, `Support`, and `Beam`.
 1. Open `PhysicsLab`, press Play.
 2. The beam must stay at rest on the floor without sinking, jittering, or sliding. Select it and confirm the Rigidbody reads mass 500 and the collider size 6 × 0.3 × 0.2.
 3. In the Inspector during Play, the Rigidbody's velocity should settle to zero and the body should go to sleep within a second or two.
+
+## 3. Piece 2 — Cable connection
+
+Runtime script: `Assets/_SwingShift/Scripts/CableController.cs`, attached to the beam. The joint itself is created by the script at attach time and destroyed at release, because attach and release are gameplay actions, not level layout.
+
+### What the cable is
+
+A single **ConfigurableJoint** on the beam, connected to the support's Rigidbody.
+
+| Setting | Value | Reason |
+| --- | --- | --- |
+| Anchor | Beam's `CableAnchor` (top-centre) | Where the sling is fixed to the load |
+| Connected anchor | Support's `HookPoint`, auto-configure **off** | The distance limit must be centred on the hook, not on the beam's start position |
+| X, Y, Z motion | Limited | Together these make one distance limit: a sphere of radius = permitted length around the hook |
+| Angular X, Y, Z | Free | A sling does not resist rotation; the beam may swing and yaw freely |
+| Linear limit spring | 0 / 0 | A hard limit: the boundary is a rigid constraint, not a spring |
+| Limit bounciness | 0 | No artificial rebound when the cable goes taut |
+| Enable collision | Off | Beam and support are coupled by the cable, not by contact |
+| Break force | Infinity for now | The 10 kN rating is applied in the tension piece so it is tested together with the gauge |
+
+### Why a distance limit is the right model
+
+A cable can pull but cannot push. Inside the radius the joint does nothing, so the beam is in free fall or resting on whatever supports it: that is slack. At the boundary the solver applies only the force needed to keep the anchor inside the sphere, always directed along the cable: that is tension. This gives slack, taut, and swinging behaviour from one constraint with no scripted cases.
+
+A spring joint would allow stretch and store energy; a fixed-length hinge chain would add bodies and instability. The distance limit is the simplest constraint that has the real cable's one-sided behaviour.
+
+### Why attach initialises from the current separation
+
+On attach, the permitted length is set to the actual distance between the two anchors (9.7 m in the lab, inside the 4–10 m range). The constraint is therefore already satisfied at the moment it is created and the solver has nothing to correct, so no impulse is injected. Attaching with a shorter length than the current separation would be an instantaneous violation: PhysX would yank the beam toward the hook in one step, a fake force that could also trip the break threshold. The script refuses to attach outside the allowed range.
+
+### Why release does not touch velocity
+
+`Release()` only destroys the joint. Momentum is a state of the body, not of the constraint; removing the constraint must leave that state alone. This is what lets a released beam keep swinging or flying, which the GDD asks for.
+
+### What is presentation only
+
+The LineRenderer draws a straight line between the two anchors every frame after physics. It reads positions and never writes them. Deleting it changes nothing physical.
+
+### What this piece does not claim
+
+- The cable is massless and perfectly stiff; a real cable has mass, sag, and elasticity.
+- No hoisting yet: the permitted length only changes through `SetPermittedLength`, which the next piece drives from input at a bounded rate.
+- No tension reading or break yet.
+
+### Build checklist (Editor)
+
+1. In `Assets/_SwingShift/Materials` create a Standard material `Greybox_Cable`, Albedo hex `1A1A1A`.
+2. Select `Beam`. Add Component → **Line Renderer**. Set Width to `0.05`. Under Materials, drag `Greybox_Cable` into Element 0. Untick **Cast Shadows** is optional. Leave Positions as they are; the script overwrites them.
+3. With `Beam` still selected, Add Component → **Cable Controller**.
+4. Fill its fields by dragging from the Hierarchy: Support → `Support`, Hook Point → `HookPoint`, Cable Anchor → `CableAnchor`, Cable Line → the Line Renderer on `Beam` (drag the `Beam` object itself onto the field; Unity picks its Line Renderer). Leave Min 4, Max 10, Attach On Start ticked.
+5. Save the scene.
+
+### How to check it
+
+1. Press Play. A dark line should run from the block to the beam, and the beam should stay on the floor: the cable is exactly taut but carries no load because the floor holds the beam.
+2. **Slack test.** While playing, select `Support` and set its Position Y to `9` in the Inspector (kinematic bodies may be moved this way). The line shortens and nothing else happens: the cable is slack, the beam does not move. Set Y back to `10.5`.
+3. **Hang test.** While playing, select `Floor` and untick the checkbox next to its name to disable it. The beam should drop a few centimetres, catch on the cable, and hang level with a small bounce that dies out. It must not pass through the cable radius, jitter, or spin up.
+4. **Swing test.** While hanging, select `Beam`, and in the Rigidbody Info section note the velocity. Stop Play. This is enough for now; a measured swing period comes in the physics gate.
+5. Stop Play. Play-mode changes are discarded automatically.
