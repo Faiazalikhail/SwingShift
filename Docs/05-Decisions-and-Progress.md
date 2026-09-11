@@ -14,7 +14,7 @@
 | Full gameplay loop | Not started |
 | Standalone build validation | Not started |
 
-**Next action:** Session 1, piece 3: Input Actions asset (Crane map: Hoist Q/E, Attach Space), then `PlayerInputRouter` and `CraneController` driving the cable length at a bounded rate. Windows builds are deferred until the user requests one.
+**Next action:** Session 1, piece 4: tension gauge from the joint's constraint force, 10 kN break rating, HUD. Windows builds are deferred until the user requests one.
 
 ## 2. Confirmed direction
 
@@ -86,6 +86,7 @@ Append a short entry after each work session.
 | 2026-09-11 — Session 1 (part 1) | Created the Unity project, applied project settings, added Input System and UGUI packages, created folder layout, `PhysicsLab` and `Prototype` scenes, Build Settings scene list, and git repository with Unity ignore rules | Initial git commit; headless editor run compiled with zero errors | None | Build and launch an initial Windows executable, then start the suspended-beam rig |
 | 2026-09-11 — Session 1 (piece 1) | Lab rig built by hand in the Editor per `06-Physics-Notes.md` §2; physics notes started | Play test: beam rests on the floor, no jitter (user confirmed). Beam mass was found at 1 and corrected to 500. | None | Piece 2: cable joint via `CableController` |
 | 2026-09-11 — Session 1 (piece 2) | `CableController` (ConfigurableJoint distance limit, attach from current separation, release preserves velocity, LineRenderer presentation) added to the beam by hand; physics notes §3 | Play test: slack test, hang test pass; beam hangs level, no jitter (user confirmed) | None | Piece 3: hoist and release from input |
+| 2026-09-11 — Session 1 (piece 3) | Input Actions asset (Crane map), `PlayerInputRouter` (latched intent), `CraneController` (bounded, ramped hoist; Space attach/release); physics notes §4 | Play test: lift, lower to slack, release/reattach, drop lands on floor, nudge swing all pass (user confirmed) | None | Piece 4: tension gauge and break |
 
 ## 7. Change log
 

@@ -1,0 +1,90 @@
+{
+    "version": 1,
+    "name": "SwingShiftActions",
+    "maps": [
+        {
+            "name": "Crane",
+            "id": "358c5a53-1250-4aa2-921e-329df2fb8f8d",
+            "actions": [
+                {
+                    "name": "Hoist",
+                    "type": "Value",
+                    "id": "f4ed3103-633d-49ec-9fa3-d27a7f6b8170",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true,
+                    "priority": 0
+                },
+                {
+                    "name": "AttachRelease",
+                    "type": "Button",
+                    "id": "030b0a71-3f19-4329-acc0-457d0e0e6ac4",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "32ee7ada-3a09-42a4-b28b-85c693227865",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Hoist",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "6abde9ca-9ffc-4bb3-a1d1-2b1d3218ec2c",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Hoist",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "e8872772-20e3-4ff0-9666-73eeb9f2ae4e",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Hoist",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "90ae9018-fbaa-4383-9555-657d30679563",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Hoist",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "a9c0d2db-8878-4c6d-b1db-c6ced50fb9b3",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "AttachRelease",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

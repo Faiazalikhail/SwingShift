@@ -129,6 +129,9 @@ namespace SwingShift
             limit.bounciness = 0f;
             limit.contactDistance = 0f;
             joint.linearLimit = limit;
+
+            // A beam resting on the floor may be asleep; a changing limit must be able to lift it.
+            GetComponent<Rigidbody>().WakeUp();
         }
 
         private void LateUpdate()

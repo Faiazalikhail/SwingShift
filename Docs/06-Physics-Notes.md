@@ -123,3 +123,48 @@ The LineRenderer draws a straight line between the two anchors every frame after
 3. **Hang test.** While playing, select `Floor` and untick the checkbox next to its name to disable it. The beam should drop a few centimetres, catch on the cable, and hang level with a small bounce that dies out. It must not pass through the cable radius, jitter, or spin up.
 4. **Swing test.** While hanging, select `Beam`, and in the Rigidbody Info section note the velocity. Stop Play. This is enough for now; a measured swing period comes in the physics gate.
 5. Stop Play. Play-mode changes are discarded automatically.
+
+## 4. Piece 3 — Hoist and release from input
+
+Runtime scripts: `PlayerInputRouter.cs` (input intent) and `CraneController.cs` (hoist command). Bindings live in `Assets/_SwingShift/Input/SwingShiftActions.inputactions`, map `Crane`: Hoist is a 1D axis with Q positive (raise) and E negative (lower); AttachRelease is Space.
+
+### How hoisting works
+
+The winch does not move the beam. It changes the **permitted length** of the cable, and the joint's distance limit does the rest: shortening below the current separation pulls the beam up through the constraint, lengthening lets it descend under gravity or go slack if something supports it.
+
+| Parameter | Value | Reason |
+| --- | --- | --- |
+| Hoist speed | 1.0 m/s | A plausible winch drum rate; adjustable in the Inspector |
+| Hoist acceleration | 4 m/s² | The rate ramps to full speed in about 0.25 s rather than stepping |
+| Length range | 4–10 m | GDD |
+
+### Why the rate is bounded and ramped
+
+The joint limit is evaluated once per physics step. If the limit jumped by a large amount in one step the solver would correct the whole violation in that step with a single large force. That force is not a real cable load, but it would show on the tension gauge and could trip the break threshold. Bounding the rate keeps each step's change to at most 0.02 m (1 m/s × 0.02 s) and ramping the rate removes the discontinuity when a key is pressed or released. Physically this is the winch's finite drum speed and its motor spin-up.
+
+### Why input is latched
+
+Key events arrive between rendered frames; physics commands are applied in `FixedUpdate`. At high frame rates several rendered frames can pass between two physics steps, so a Space tap read only in `Update` could be missed. The router stores the press until the crane consumes it on the next physics step.
+
+### Why attach and release are the same key
+
+Space toggles: attach when free, release when attached. Release removes the joint and nothing else, so the beam keeps its momentum. Attach re-initialises the permitted length from the current separation, so re-attaching after a release never produces a jump.
+
+### What this piece does not claim
+
+- No hook proximity check yet: in the lab the beam is always under the hook. The game version requires the hook within a small distance of the anchor (Session 2).
+- No tension reading or break yet (piece 4).
+
+### Build checklist (Editor)
+
+1. Right-click `LabRoot`, Create Empty, name it `Player`. Add Component → **Player Input Router**.
+2. Right-click `LabRoot`, Create Empty, name it `Crane`. Add Component → **Crane Controller**. Drag `Player` onto its Input field and `Beam` onto its Cable field. Leave Hoist Speed 1 and Hoist Acceleration 4.
+3. Save the scene.
+
+### How to check it
+
+1. Press Play. Hold **Q**. The beam lifts off the floor, hangs level, and rises steadily. Release Q: it stops without a jolt.
+2. Hold **E**. The beam descends and settles on the floor; keep holding and the line goes slack. Release E.
+3. Press **Space**. The line disappears (released). Press Space again: it reattaches at the current separation with no movement.
+4. Hoist with Q to about mid-height, then press Space. The beam drops and lands. It must not pass through the floor.
+5. Nudge test: while hanging, select `Support` and set its Position X to `1`, then back to `0`. The beam swings and the swing decays only slowly. That is the pendulum the physics gate will measure.
