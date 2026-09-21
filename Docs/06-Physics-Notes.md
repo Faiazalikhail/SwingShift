@@ -220,3 +220,208 @@ The HUD smooths the displayed tension with a short time constant (0.08 s) so the
 4. Nudge the support (Position X to 1 and back). Tension oscillates above and below 4.9 kN with the swing, highest at the bottom of each pass.
 5. Deliberate break: stop Play, select `Beam`, set Break Force N on the cable component to `6000`, Play, hold Q from the floor. The cable breaks during the ramp, the HUD reads BROKEN, the Console logs the force, the beam stays down. Stop Play; the value returns to 10,000 automatically.
 6. Snatch test at the real rating: Play, hoist to about 3 m off the floor, press Space to release, and press Space again while the beam is still falling. The cable catches it and breaks. Expected: the catch force is a shock load far above 10 kN.
+
+## 6. Piece 5 — Gantry cable: any load, elastic cable, trolley
+
+Runtime: `CableLoad.cs` (new), `CableController.cs` (moved from the beam to the trolley), `CraneController.cs` (trolley and take-up), `PlayerInputRouter.cs` (A/D, R).
+
+### What changed and why
+
+**The cable now lives on the trolley.** Before, the joint was a component of the beam, so the cable could only ever hold that beam. The game needs one cable that picks up many containers. The joint is now added to the trolley with the load as its connected body. The constraint is symmetric, so the physics is unchanged; only ownership moved. `OnJointBreak` is delivered to the object that owns the joint, which is why the break handling moved with it.
+
+**`CableLoad` marks what can be lifted.** It holds one reference, the cable anchor transform, and exposes the rigidbody and its weight `W = m·g`. Enabled loads register in a static list; the cable searches that list for an anchor within `attachRange` of the hook. No physics lives in this component.
+
+**The empty hook is a marker.** Unattached, the hook is drawn straight below the cable origin at the permitted length. It has no rigidbody and does not swing. This keeps one constraint in the scene instead of two chained ones (decision D10). Once attached, the cable end is the load's anchor.
+
+### Elastic cable
+
+The hard limit from piece 4 treats the cable as perfectly rigid. Any velocity mismatch when the cable goes taut must then be removed in one 0.02 s step, and the force `m·Δv/Δt` is enormous: even lifting a resting 500 kg load at 1 m/s demands 25 kN. A real wire rope stretches, which spreads that change over time.
+
+The joint limit is now soft. Beyond the permitted length `L` the cable force is
+
+`F = k·x + c·ẋ`  where `x = separation − L` (the stretch), `k = 100,000 N/m`, `c = 6,000 N·s/m`.
+
+Inside the limit the force is zero, so the cable can pull but never push.
+
+| Quantity | Formula | 300 kg | 550 kg | 800 kg |
+| --- | --- | --- | --- | --- |
+| Weight | `m·g` | 2.94 kN | 5.40 kN | 7.85 kN |
+| Static stretch | `m·g / k` | 2.9 cm | 5.4 cm | 7.8 cm |
+| Stretch natural frequency | `(1/2π)·√(k/m)` | 2.9 Hz | 2.1 Hz | 1.8 Hz |
+| Damping ratio | `c / (2·√(k·m))` | 0.55 | 0.40 | 0.34 |
+| Swing angle that reaches 10 kN at the bottom | from `T = m·g·(3 − 2cos θ₀)` | never | about 55° | about 30° |
+
+The last row is energy conservation for a pendulum released from rest at `θ₀`: `v² = 2gL(1 − cos θ₀)` at the bottom, and `T = mg + mv²/L`. It is why mass class matters to the player without any scripted rule: the same rating leaves the heavy container much less swing margin.
+
+The stretch frequency (about 2 Hz) is well below the 50 Hz physics rate, so the spring is resolved with about 25 steps per cycle and stays stable.
+
+### Dynamic load when lifting from rest
+
+If the winch is already moving at speed `v` when the load leaves the ground, the load must catch up. For an undamped spring the extra force peaks at `v·√(k·m)` above the weight. At 1 m/s with 800 kg that is 8.9 kN on top of 7.85 kN: a break. So the winch takes up slack at 0.15 m/s until the tension reaches 80 % of the load's weight, which keeps the overshoot near 1.3 kN, and only then ramps to full speed at 1 m/s² (`m·a` = 0.8 kN for 800 kg).
+
+The winch also brakes before either end of the drum using `v² = 2·a·s`: it never travels faster than it can stop in the remaining length `s`. Stopping the winch dead while raising would let the load coast up, go slack, and fall back onto the cable.
+
+### Trolley
+
+The trolley is the kinematic support from piece 1, now moved each fixed step with `Rigidbody.MovePosition` along world X. `MovePosition` tells PhysX the body's velocity for that step, so the joint sees a moving support rather than a teleport. The commanded velocity ramps at 2 m/s² to 3 m/s. The load is not driven sideways by any script: it lags the accelerating support, the cable tilts, and the horizontal component of tension accelerates it. That lag is the swing.
+
+At the rail ends the trolley stops at once. The load keeps its momentum and swings out, as it would against a real buffer.
+
+A kinematic trolley has infinite effective mass: the load cannot pull it back. For a gantry trolley that outweighs the load and is driven by a geared motor this is a reasonable idealisation, and it keeps the pendulum reference case exact.
+
+### What this piece does not claim
+
+- The empty hook has no dynamics.
+- The cable has no mass, no sag, and no bending; it is a straight massless spring-damper in tension only.
+- `k` and `c` are chosen for stable, readable behaviour at the game's scale, not measured from a specific wire rope.
+
+### Build checklist (Editor, `PhysicsLab`)
+
+1. Select `Beam`. On the old **Cable Controller** component click the three dots → Remove Component. Do the same for its **Line Renderer**.
+2. With `Beam` selected, Add Component → **Cable Load**. Drag `CableAnchor` onto Cable Anchor.
+3. Select `Support`. Add Component → **Line Renderer**: Width `0.05`, material `Greybox_Cable`, Cast Shadows off.
+4. Right-click `Support` → 3D Object → Cube, name it `HookVisual`. Scale `0.3, 0.3, 0.3`. Remove its **Box Collider**. Give it the `Greybox_Cable` material.
+5. With `Support` selected, Add Component → **Cable Controller**. Cable Origin → `HookPoint`, Hook Visual → `HookVisual`, Cable Line → drag `Support` itself. Set Min Length `2`, Max Length `12`, Start Length `6`. Leave Break Force `10000`, Attach Range `0.6`, Stiffness `100000`, Damping `6000`.
+6. Select `Crane`. On **Crane Controller**: Cable → `Support`, Trolley → `Support`. Set Hoist Acceleration `1`, Take Up Speed `0.15`, Rail Min X `-12`, Rail Max X `12`. With `Crane` selected a yellow line in the Scene view shows the rail.
+7. Select `PrototypeHUD`. On **Prototype HUD** drag `Support` onto Cable. In `HUDText` set Height to `220`.
+8. Duplicate `Beam` twice for mass tests: name them `Load300` and `Load800`, move them to X `-8` and X `8`, set Rigidbody Mass `300` and `800`.
+9. Save the scene.
+
+### How to check it
+
+1. Play. The hook cube hangs 6 m below the support. Hold E: it lowers. The HUD shows **none in reach**.
+2. Lower until the hook is at the beam's anchor. The HUD shows **in reach: 500 kg**. Press Space: ATTACHED, tension near 0.
+3. Hold Q. The HUD shows **taking up slack**, tension climbs smoothly to about 4.9 kN, the beam lifts, then the winch speeds up. Peak should stay under about 6.5 kN. Rest reading: 4.90 kN. This confirms the soft limit reports the same force as before.
+4. Hold D for two seconds and let go. The beam lags, then swings. Tension is highest at the bottom of each pass.
+5. Run into a rail end at full speed. The trolley stops dead; the beam swings out.
+6. Release with Space over open floor, move the hook to `Load800`, hook it, and lift it with Q held. It must survive a careful straight lift. Peak should be under 10 kN.
+7. With `Load800` hanging, drive D at full speed into the rail end. Expect a swing large enough to break the cable or come close. Repeat with `Load300`: it should be safe.
+8. Hoist fully up with Q held. The winch slows before the top; tension shows no spike.
+
+## 7. Piece 6 — Tower crane, four-rope rig, port scene
+
+Runtime: `CraneController.cs` (slew, trolley, hoist), `CableController.cs` (up to four ropes), `CableLoad.cs` (corner anchors), `Container.cs`, `CameraRig.cs`, `DropMarker.cs`. Scene: `Prototype`. `PhysicsLab` is retired from this piece on; section 6 remains the record of the single-rope checks.
+
+### Slew and trolley
+
+The rope head's position is held in polar form about the tower axis: slew angle `ψ` (yaw, 0 along world +Z) and trolley radius `r`. Each fixed step both rates are ramped toward the commanded values, integrated, clamped at their end stops, and converted:
+
+`x = x₀ + r·sin ψ`  `z = z₀ + r·cos ψ`  `y = head height`
+
+The result goes to `Rigidbody.MovePosition`, so PhysX knows the head's velocity during the step. The head's speed over the ground from slewing alone is `v = ω·r`: at 15°/s (0.26 rad/s) and 20 m radius that is 5.2 m/s, faster than the 3 m/s trolley. Slewing at long radius is therefore the most violent move available to the player, and running the trolley in before slewing is the safe technique.
+
+While slewing at a steady rate the load needs a centripetal force `m·ω²·r` toward the tower to stay on the circle. Only the ropes can supply it, so the load hangs outward at an angle `tan φ = ω²·r / g`. At 0.26 rad/s and 20 m that is about 8°. When the slew stops, that offset becomes a radial swing on top of the tangential one.
+
+Only the rope head is a physics body. The jib and trolley models are posed each frame from the head's interpolated position, so they cannot disagree with the physics.
+
+### Four ropes
+
+One rope to the top centre leaves the container free to tilt and spin. Four ropes to the four top corners remove that freedom by geometry, not by an angular constraint: tilting the container would lengthen the ropes on the rising side beyond their limit, so they pull it back level; yawing it would skew all four ropes and lengthen them, so they pull it back square.
+
+The rope head keeps a fixed world heading while the jib slews (a spreader on a rotator). The four rope origins are laid out in the same 2.2 × 5.6 m rectangle as the container's anchors, so the ropes hang parallel. Parallel ropes of equal length form a parallelogram linkage: the container translates on a circular arc without rotating, and its swing period is that of a simple pendulum of the rope length, `T = 2π√(L/g)` (7.8 s at 15 m).
+
+Each rope is one soft distance-limit joint with a quarter of the rig's stiffness and damping. Springs in parallel add, so the rig as a whole keeps `k = 1,000 kN/m`, `c = 60 kN·s/m`.
+
+On attach, each origin pairs with its nearest free anchor in plan view. The common permitted length starts at the longest of the four, so no joint starts stretched and none applies an impulse.
+
+### Tension and overload
+
+Each joint reports its constraint force as a vector (`Joint.currentForce`). The ropes are not exactly parallel once the load swings, so the load on the rig is the magnitude of the vector sum, not the sum of magnitudes. That is what a load cell at the rope head would read, and it is the HUD value. The four individual magnitudes are shown as well: equal at rest (`m·g/4`), unequal when the load is tilted or was hooked off-centre.
+
+Overload is judged on that net value in `FixedUpdate`: above the 100 kN rating, all four joints are destroyed and the state becomes Broken. The joints' own `breakForce` is infinite. A per-joint rating would let one rope fail, shift its load to the other three, and cascade within a few steps, which is realistic but unreadable for a player.
+
+### Masses and the weighing mechanic
+
+| Quantity | Formula | 3,000 kg | 5,500 kg | 7,500 kg |
+| --- | --- | --- | --- | --- |
+| Weight = tension at rest | `m·g` | 29.4 kN | 54.0 kN | 73.6 kN |
+| Per rope at rest | `m·g / 4` | 7.4 kN | 13.5 kN | 18.4 kN |
+| Static stretch | `m·g / k` | 2.9 cm | 5.4 cm | 7.4 cm |
+| Damping ratio | `c / (2·√(k·m))` | 0.55 | 0.40 | 0.35 |
+| Take-up overshoot at 0.15 m/s | `v·√(k·m)` | 8.2 kN | 11.1 kN | 13.0 kN |
+| Winch ramp at 1 m/s² | `m·a` | 3.0 kN | 5.5 kN | 7.5 kN |
+| Swing release angle that reaches 100 kN at the bottom | `T = m·g·(3 − 2cos θ₀)` | never | about 55° | about 35° |
+
+`Container` draws the mass and the paint colour independently at run start, so colour carries no information. The HUD never prints mass. Once the container hangs still the tension equals its weight, so the player reads 29, 54, or 74 kN and knows what they are carrying and how much margin is left.
+
+The winch controller does use the load's true weight, to decide when slack take-up is over (tension above 80 % of weight). That is a property of the crane's control system, not information given to the player.
+
+### Anti-sway damper
+
+With nothing but air around it, a pendulum on 15 m ropes keeps swinging for minutes, and a player cannot place a container that way. Harbour cranes solve this with an anti-sway system. Here it is modelled as a viscous damper between the rope head and the load, computed by hand in `CableController.ApplyAntiSway` every fixed step:
+
+1. Head velocity from its own displacement, because the head is kinematic: `v_head = Δx / Δt`.
+2. Relative horizontal velocity of the load: `v_rel = v_load − v_head`, with the vertical component set to zero.
+3. Pendulum natural frequency for the current rope length: `ω = √(g / L)`.
+4. Damping coefficient for a chosen damping ratio `ζ`, from `ζ = c / (2·m·ω)`: `c = 2·ζ·m·ω`.
+5. Force on the load: `F = −c · v_rel · (T / m·g)`, clamped so the last factor stays between 0 and 1.
+
+Because `c` scales with mass, every container class settles at the same rate. With `ζ = 0.35` a swing loses about 90 % of its amplitude in one cycle (`e^(−2πζ/√(1−ζ²)) ≈ 0.10`). At 15 m, `ω = 0.81 rad/s`, so for 7,500 kg `c ≈ 4,250 N·s/m`, and a 2 m/s relative velocity draws about 8.5 kN.
+
+The factor `T / m·g` is the share of the weight the ropes carry. The damper acts through the ropes, so it fades out as a container is set down and does nothing to one resting on the ground.
+
+The force is horizontal, so it does not enter the rope tension directly; it lowers tension indirectly by reducing swing speed and therefore the `m·v²/L` term. The HUD shows its magnitude so its effect is never hidden.
+
+What it does not claim: a real system damps sway by accelerating the trolley, and the reaction goes into the crane. Here the head is an ideal support, so the reaction is not modelled.
+
+Crane rates were lowered with it: slew 10°/s at 5°/s², trolley 2.5 m/s at 1.2 m/s². Swing amplitude from a velocity change `Δv` of the head is about `Δv/√(g·L)` radians when the change is fast compared with the swing period, so halving the head's acceleration and top speed directly reduces the swing the player has to manage.
+
+### Camera and footprint marker
+
+Both are presentation only and run in `LateUpdate`. The camera follows a smoothed point between the rope head and the load, turns with the jib so W is always away from the tower on screen, zooms by a fixed fraction of the current distance per wheel notch, and orbits while the right mouse button is held.
+
+The marker raycasts straight down from the load's centre of mass, ignores the load itself, and lays a container-sized quad on the first surface hit. It reads the scene; it writes nothing to physics.
+
+### What this piece does not claim
+
+- The jib, mast, and trolley have no mass or flexibility; the rope head is an ideal support.
+- The rotator that keeps the head's heading is assumed, not simulated.
+- The ship does not float or heel; it is a static collider. Water is a visual plane.
+- Ropes are massless straight spring-dampers in tension only.
+
+### Scene values (`Prototype`, built by hand)
+
+Project Settings → Physics: Default Solver Iterations `12`, Default Solver Velocity Iterations `4`.
+
+| Object (parent) | Type | Position | Scale | Notes |
+| --- | --- | --- | --- | --- |
+| Quay (Environment) | Cube | −15, −5, 0 | 50, 10, 80 | top at y = 0, edge at x = 10 |
+| BasinFloor (Environment) | Cube | 30, −10.5, 0 | 40, 1, 80 | catches dropped containers |
+| BasinWallFar / N / S (Environment) | Cube | 50.5, −5, 0 / 30, −5, 40.5 / 30, −5, −40.5 | 1, 10, 80 / 40, 10, 1 / 40, 10, 1 | |
+| Water (Environment) | Plane | 30, −1.5, 0 | 4, 1, 8 | Mesh Collider removed |
+| Ship | Empty | 20, 0, 0 | 1, 1, 1 | |
+| Hull_Floor (Ship) | Cube | 0, −4.5, 0 | 9, 1, 40 | hold floor top at y = −4 |
+| Hull_SideQuay / Hull_SideSea (Ship) | Cube | ∓4, −1.5, 0 | 1, 5, 40 | rim at y = 1 |
+| Hull_Bow / Hull_Stern (Ship) | Cube | 0, −1.5, ±13.5 | 7, 5, 13 | hold is 7 × 14 m, 5 m deep |
+| Bridge (Ship) | Cube | 0, 4, −16 | 7, 6, 5 | |
+| Crane | Empty | 0, 0, 0 | 1, 1, 1 | `CraneController`, `DropMarker` |
+| Mast (Crane) | Cube | 0, 10, 0 | 2, 20, 2 | |
+| JibPivot (Crane) | Empty | 0, 19, 0 | 1, 1, 1 | rotated by script |
+| Jib (JibPivot) | Cube | 0, 0.5, 12 | 1.2, 1, 36 | collider removed |
+| Counterweight (JibPivot) | Cube | 0, −0.5, −5 | 2.5, 2, 3 | collider removed |
+| TrolleyVisual (JibPivot) | Cube | 0, −0.3, 16 | 1.6, 0.6, 2 | collider removed |
+| RopeHead (Crane, not JibPivot) | Empty | 0, 18, 16 | 1, 1, 1 | Rigidbody: kinematic, Interpolate; `CableController` |
+| HeadFrame (RopeHead) | Cube | 0, 0, 0 | 2.4, 0.3, 5.8 | collider removed |
+| RopeOrigin_0–3 (RopeHead) | Empty | ±1.1, −0.2, ±2.8 | | |
+| Rope_0–3 (RopeHead) | Empty + Line Renderer | 0, 0, 0 | | width 0.06, `Greybox_Cable` |
+| Spreader (Crane) | Cube | any | 2.5, 0.25, 6 | collider removed; posed by script |
+| LandingMarker (Crane) | Quad | any | 2.5, 6, 1 | Mesh Collider removed; transparent material |
+| Container prefab root | Empty | y = 1.25 | 1, 1, 1 | Rigidbody (Interpolate, Continuous Dynamic, damping 0), Box Collider 2.5 × 2.5 × 6, `CableLoad`, `Container` |
+| Body (Container) | Cube | 0, 0, 0 | 2.5, 2.5, 6 | collider removed |
+| Anchor_0–3 (Container) | Empty | ±1.1, 1.25, ±2.8 | | |
+| Yard | 8 containers | x ∈ {−6, −2, 2, 6}, z ∈ {15, 22}, y = 1.25 | | all inside 6–28 m radius and −30° to 135° slew |
+
+`CableController`: Min `3`, Max `22`, Start `10`, Break Force `100000`, Attach Range `0.8`, Stiffness `1000000`, Damping `60000`. `CraneController`: defaults.
+
+Reach check: the hold centre is 20 m from the tower at 90° slew, its far corner 24.5 m. The head is at y = 18; a container top on the quay is 15.3 m below the origins, on the hold floor 19.3 m, both inside the 3–22 m rope range.
+
+### How to check it
+
+1. Play. The spreader hangs 10 m under the head on four vertical lines. A/D slews the jib, W/S runs the trolley, and the head frame keeps its heading. The camera follows and turns with the jib; wheel zooms; right mouse orbits.
+2. Put the yellow footprint on a yard container, lower with E until the HUD shows **container in reach**, press Space.
+3. Hold Q. Take-up, then lift. At rest the tension reads about 29, 54, or 74 kN and the four per-rope values are nearly equal. Record the peak for a 74 kN container; it must stay under 100 kN on a straight lift.
+4. Slew at full rate at long radius and stop. The container swings but stays level and square. Tension peaks at the bottom of each pass.
+5. Run the trolley in to about 8 m and repeat the slew: the swing is much smaller (`v = ω·r`).
+6. Place a container on the hold floor using the marker, release, and stack a second on top. The stack must rest without creeping or jitter.
+7. With a 74 kN container at long radius, slew hard into the end stop. Expect the rig to fail or come close.
+8. Release a container from height over the basin: it falls through the water plane and rests on the basin floor.

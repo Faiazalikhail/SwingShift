@@ -4,129 +4,114 @@
 
 ## 1. Deliverable
 
-A single-player, greybox Unity game with one crane truck, one steel beam, one target pad, and a 90-second run. Launch directly into gameplay, show success or a specific failure reason, and allow immediate restart.
+A single-player Unity game about loading a container ship with a quayside tower crane. The player slews the jib, runs the trolley, hoists containers of unknown mass on a four-rope rig, carries them over the ship, and stacks them in the hold before the 90-second shift ends. Launch directly into gameplay, show a scored result with a specific failure reason where one applies, and allow immediate restart.
+
+Revised 2026-09-18 after instructor review: the cable physics proof was accepted as sufficient, with the direction to build a game around it and add visual presentation. The truck and drive mode were removed in favour of a fixed tower crane with a slewing jib (see `05-Decisions-and-Progress.md`, change log).
 
 ## 2. Scope contract
 
 | Included | Basis |
 | --- | --- |
-| Drive and crane modes, switched with Tab | GDD |
-| Parked lifting with outriggers | GDD |
-| Arm rotation, trolley travel, adjustable hoist | GDD |
-| Physical beam swing and release | GDD |
+| Tower crane: jib slew, trolley travel along the jib, adjustable hoist | Revised scope |
+| Four-rope rig to the container's top corners | Revised scope |
+| Follow camera with zoom and orbit; landing footprint marker | Revised scope |
+| Physical container swing, release, and stacking | GDD physics, revised theme |
+| Containers of three hidden mass classes on one rig rating | Revised scope |
 | Cable tension gauge and overload failure | GDD |
-| Landing readout and impact-dependent outcome | GDD |
-| 90-second timer | GDD |
-| One crane, beam, and target; grey geometry | GDD |
-| On-screen controls, result text, R to restart | Proposed usability defaults supporting the loop |
+| Landing speed readout and impact-dependent grade | GDD |
+| 90-second shift timer, score, results, R to restart | GDD, revised format |
+| Themed presentation: quay, ship, coloured containers, physics-driven feedback | Instructor direction |
 
-### Explicit GDD exclusions
+### Exclusions
 
-- Story and characters.
-- Additional levels, wind, and weather.
-- Driving while carrying a load.
-- Sound, menus, and saving.
-- Art production.
+- Truck, drive mode, and outriggers.
+- Story, characters, additional levels, wind, weather, and moving water physics.
+- Menus, saving, leaderboards, and progression.
+- Cable wrapping, rope-link chains, and a simulated empty hook.
+- Third-party asset dependencies unless they solve a demonstrated blocker.
 
-### Additional implementation boundaries
+These boundaries simplify implementation; they must not remove the physics behaviours in section 3.
 
-- No cable wrapping, chain of rope links, or tangled-rope simulation.
-- No crane tipping, terrain deformation, or hydraulic simulation.
-- No vehicle selection, upgrades, leaderboards, or progression.
-- No extra boom articulation beyond the specified rotation and trolley movement.
-- No third-party asset dependency unless it solves a demonstrated blocker.
+## 3. Physics the game is built on
 
-These boundaries simplify implementation; they must not remove the four required physics behaviours.
-
-## 3. Player loop
-
-1. Drive to a clearly marked operating area.
-2. Stop and press Tab to deploy outriggers and enter crane mode.
-3. Position the hook near the beam's attachment point.
-4. Press Space to attach, then hoist the beam clear of the ground.
-5. Rotate the arm and move the trolley to transfer the load.
-6. Control swing and lower onto the target.
-7. Release and allow the beam to settle.
-8. Read the result and press R to retry.
-
-## 4. Controls
-
-| Mode | Input | Action |
-| --- | --- | --- |
-| Drive | W | Throttle |
-| Drive | S | Brake; reverse after stopping is a proposed default |
-| Drive | A / D | Steer left / right |
-| Both | Tab | Request mode change |
-| Crane | A / D | Rotate arm left / right |
-| Crane | W / S | Trolley out / in |
-| Crane | Q / E | Hoist up / down |
-| Crane | Space | Attach / release |
-| Any run state | R | Restart — proposed default |
-
-Only the active mode receives movement commands. Clear held-input state when changing modes so an input from the previous mode does not trigger unintended movement.
-
-## 5. Proposed rules for unspecified details
-
-| Situation | Default for implementation |
+| Behaviour | Where the player sees it |
 | --- | --- |
-| Enter crane mode | Truck must be grounded and nearly stationary; initial speed threshold 0.1 m/s, also checking rotation. |
-| Park | Deploy simple outrigger geometry and lock the base at its current valid pose. |
-| Return to drive mode | No beam attached; trolley, hoist, and arm must be in the documented travel configuration. Display the unmet condition. |
-| Attach | Hook is within a small configurable distance of the beam's marked attachment point. Do not teleport the beam into place. |
-| Release | Remove the connection and preserve physical velocity. |
-| Start timer | First valid gameplay input starts the 90-second countdown. |
-| Clean landing | Incoming contact speed is below 0.5 m/s. |
-| Rough landing | Incoming contact speed is 0.5–1.5 m/s inclusive; may still succeed with a rough result. |
-| Damaging impact | Incoming contact speed exceeds 1.5 m/s after the beam has first been lifted; fails the run. |
-| Where damage applies | Beam impacts with the ground, target, or crane after the lift. Initial resting contact is excluded. |
-| Placement success | Released beam is supported by the target, fully inside its usable footprint, and sufficiently still for one continuous second. |
-| Suspended target overlap | Never sufficient for success. |
-| Invalid placement | Run continues while time remains, provided there has been no damaging impact. |
-| Multiple events together | Damage or cable failure takes priority over placement success. Evaluate timeout consistently against the recorded completion time. |
-| Result | One terminal outcome per run; disable gameplay input and stop the timer. Keep R available. |
+| Pendulum motion from a moving support | Slewing swings the load tangentially (head speed `v = ω·r`), trolley travel swings it radially; together they make a two-axis pendulum. |
+| Four-rope suspension | The container stays level and keeps its heading; per-rope forces show uneven loading. |
+| Cable tension `T = mg cos θ + mv²/L`, plus hoist and support acceleration | Gauge rises at the bottom of each swing; heavy containers leave little margin under the rating. The gauge is also the only way to learn a container's mass. |
+| Elastic cable and shock loading | Taking up slack gently versus snatching a load. |
+| Impact speed and momentum | Landing grade; hard landings damage the container. |
+| Rigid-body stacking and stability | Containers must rest supported; a poorly placed one slides or topples off the stack. |
 
-Target settling uses both linear and angular motion. The worst qualifying impact during a landing attempt determines its grade; a later gentle contact must not erase an earlier hard hit.
+## 4. Player loop
 
-## 6. Level and camera
+1. Slew and trolley the spreader over a container on the quay and lower it onto the container's top.
+2. Press Space to hook the four corners, then hoist. The tension reading reveals how heavy it is.
+3. Carry it to the ship while managing the swing; heavier containers need gentler moves.
+4. Lower it into the hold or onto another container, using the footprint marker to line it up.
+5. Release and let it settle; it scores once it is at rest on the ship.
+6. Return for the next container. Repeat until the ship is full or the shift ends.
+7. Read the result and press R to retry.
+
+## 5. Controls
+
+| Input | Action |
+| --- | --- |
+| A / D | Slew jib left / right |
+| W / S | Trolley out / in |
+| Q / E | Hoist up / down |
+| Space | Hook / release |
+| Mouse wheel | Zoom |
+| Right mouse button + move | Orbit camera |
+| R | Restart |
+
+## 6. Rules
+
+| Situation | Rule |
+| --- | --- |
+| Degrees of freedom | Containers are unconstrained rigid bodies in three dimensions. |
+| Rope head | The rope head follows the trolley but keeps a fixed world heading while the jib slews, like a spreader on a rotator, so containers stay square to the hold. |
+| Spreader | The empty spreader is a marker straight below the rope head at the permitted rope length. It is not a simulated body. |
+| Attach | The spreader must be within a small configurable distance of the centre of a container's four corner anchors. Each rope pairs with its nearest corner. The container is never teleported. |
+| Release | The connection is removed and the container keeps its velocity. |
+| Container classes | 3,000, 5,500, and 7,500 kg against a 100 kN rig rating, drawn at random per container. Colour is random and unrelated to mass, and the HUD never states mass: the player reads it from the tension after lifting. Heavier containers score more. |
+| Start timer | The first valid gameplay input starts the 90-second countdown. |
+| Clean landing | Incoming contact speed below 0.5 m/s. Full score for the container. |
+| Rough landing | 0.5–1.5 m/s inclusive. Reduced score. |
+| Damaging impact | Above 1.5 m/s after the container has first been lifted. The container is damaged and scores nothing. |
+| Worst impact counts | The hardest qualifying impact during a carry decides the grade; a later gentle contact does not erase it. |
+| Delivered | Released, resting on the ship or on a delivered container, inside the hold footprint, and still (linear and angular) for one continuous second. |
+| Lost | A container that leaves the play area or lands in the water scores nothing. |
+| Knock-on damage | A delivered container that is later knocked off the ship loses its score. |
+| Rig overload | When the net rope force exceeds the rating in a physics step, all ropes fail and the shift ends. The result states the force and the rating. |
+| Ship full | Ends the shift early with a bonus for remaining time. |
+| Timeout | Ends the shift; the score stands. |
+| Result | One terminal outcome per run; gameplay input is disabled and the timer stops. R stays available. |
+
+## 7. Level and camera
 
 ### Layout requirements
 
-- Flat ground and a short driving approach.
-- Pickup and target reachable from the same operating position.
-- Enough boom height and cable travel to pick up, clear, transfer, and place the beam.
-- An unobstructed transfer route and a target larger than the beam footprint.
-- Ground boundaries or reset handling that prevent an irrecoverable off-map run.
+- A quay with a container yard, a basin (the pit) holding water and the ship, and a tower crane on the quay whose jib reaches both.
+- The hold is a whole number of container footprints with clearance, and two layers deep.
+- Enough head height and rope travel to lift a container over the ship's side and over an existing stack.
+- The basin floor catches anything dropped in the water.
 
-Validate reach and clearance with actual crane dimensions before finalizing the layout. Do not place the target using visual guesswork alone.
+Validate reach and clearance with the real crane dimensions before finalising the layout.
 
 ### Camera requirements
 
-- Elevated driving view showing the truck and approach.
-- Crane view showing the hook, beam, target, and surrounding ground.
-- Simple shadows and target markings to communicate height and depth.
-- No mandatory cinematic transitions or free-camera controls.
+- Follows the load, turns with the jib, zooms with the mouse wheel, orbits while the right mouse button is held.
+- A footprint marker under the load shows where it would land, because a single view cannot show depth.
 
-## 7. Minimum feedback
+## 8. Feedback
 
-| Readout | Required information |
+| Readout | Information |
 | --- | --- |
-| Mode | Drive or Crane |
-| Timer | Seconds remaining |
-| Cable | Measured load in kN and rated limit |
-| Landing | Incoming impact speed and grade when applicable |
-| Context | Current controls or reason an action is blocked |
-| Outcome | Success, rough placement, cable failure, damaged beam, or timeout |
+| Timer and score | Seconds remaining, current score, containers delivered |
+| Cable | Tension bar in kN with the rating marked; cable colour shifts with tension |
+| Load | Prompt when a container is in reach; per-rope forces. Never the mass. |
+| Landing | Impact speed and grade at each landing |
+| Outcome | Ship full, timeout, or cable failure, with the score breakdown |
 
-Use text as well as colour. Keep physics diagnostics in the test scene or developer view rather than cluttering the player HUD.
-
-## 8. Run pacing target
-
-| Activity | Initial target |
-| --- | --- |
-| Approach and park | 10–15 s |
-| Attach and lift | 15–20 s |
-| Transfer and manage swing | 20–25 s |
-| Lower, release, settle | 15–20 s |
-| Recovery allowance within 90 s | Approximately 10–30 s |
-
-These are playtest targets. Tune distances and controls so careful play leaves room for a correction.
+Use text as well as colour. Every visual effect is driven by a measured physics value; none alters the simulation. Detailed diagnostics stay in the `PhysicsLab` scene.

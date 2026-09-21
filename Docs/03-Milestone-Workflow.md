@@ -6,100 +6,92 @@
 
 - Work is organised into milestones, each with a concrete deliverable and a pass/fail gate.
 - A milestone is complete only when its gate has been checked in the Editor and recorded in the progress log.
-- The physics gate for the cable comes first; nothing is built on top of it until it passes.
+- The physics gate for the cable came first; the game is built on top of that accepted rig.
 - A failed physics gate is resolved in the isolated lab rig before dependent work continues. Delivery testing is never skipped to compensate.
 
 ## 2. Milestones
 
 | Milestone | Deliverable | Gate |
 | --- | --- | --- |
-| 1 — Foundation and cable proof | Configured project and working suspended-beam rig | Cable hangs, swings, hoists, releases, and reports plausible tension. |
-| 2 — Complete lifting assembly | Fixed-base crane with arm, trolley, attachment, and break handling | Pick up, transfer, lower, release; deliberate overload is testable. |
-| 3 — Truck and mode integration | Drive, park, operate, return to travel configuration | No simultaneous driving and lifting; camera supports both modes. |
-| 4 — Complete run | Target, impact grade, timer, results, restart | Full run can succeed and each failure can be reproduced. |
-| 5 — Tuning and usability | Readable, repeatable gameplay | Several full runs without unexplained behaviour. |
-| 6 — Build and delivery checks | Tested Windows release candidate and project handoff | Packaged game passes the delivery checklist. |
-| 7 — Stabilisation | Repairs for demonstrated blockers only | Final build remains tested after fixes. |
+| 1 — Foundation and cable proof | Configured project and working suspended-load rig | Cable hangs, swings, hoists, releases, and reports plausible tension. Accepted at instructor review. |
+| 2 — Tower crane | Slew, trolley, lowering spreader, four-rope pickup of any container, elastic ropes, follow camera | Pick up from the ground, carry, lower, release; deliberate overload is testable. |
+| 3 — Port scene | Quay, basin, ship with hold, tower and jib, containers with hidden mass | Every hold slot is reachable; containers stack and stay stacked. |
+| 4 — Complete run | Landing grade, delivery check, score, timer, results, restart | A full shift can be completed and each ending can be reproduced. |
+| 5 — Visual presentation | Materials, lighting, tension-driven cable colour, gauge bar, landing and break effects | A viewer can read load, tension, and landing quality without the debug text. |
+| 6 — Tuning and usability | Readable, repeatable gameplay | Several full shifts without unexplained behaviour. |
+| 7 — Build and delivery checks | Tested Windows release candidate and project handoff | Packaged game passes the delivery checklist. |
 
-**Feature-complete point: end of milestone four.** Milestones five and six are required work, not optional polish.
+**Feature-complete point: end of milestone five.** Milestones six and seven are required work, not optional polish.
 
 ## 3. Milestone checklists
 
 ### Milestone 1 — Foundation and cable proof
 
-- [x] Create a basic 3D project using the selected installed editor.
-- [x] Confirm the Windows build module is available; resolve setup blockers immediately.
-- [x] Set up source control, Unity ignore rules, and readable asset serialization.
-- [x] Create `PhysicsLab` and `Prototype` scenes.
-- [x] Create a fixed support, simple suspended body, beam, and floor.
+- [x] Create the project, source control, and `PhysicsLab` and `Prototype` scenes.
+- [x] Create a fixed support, suspended beam, and floor.
 - [x] Add cable length control, release, and tension diagnostics.
-- [x] Check slack behaviour, attachment initialization, and rest tension.
-- [ ] Tune cable elasticity so brief catches do not break the cable at the rating.
-- [ ] Run the physics gate in the validation document, including the pendulum period check.
-- [ ] Save a known-good checkpoint.
+- [x] Check slack behaviour, attachment initialisation, and rest tension.
+- [x] Instructor review: physics proof accepted.
 
-**Stop condition:** If ordinary hoisting or attachment produces unresolved instability, keep working in the isolated rig. Record the exact reproduction steps before starting truck work.
+### Milestone 2 — Tower crane
 
-### Milestone 2 — Lifting assembly
-
-- [ ] Add powered arm rotation and constrained trolley travel.
-- [ ] Add hook proximity feedback and valid attachment handling.
-- [ ] Add bounded hoist speed and smooth motor commands.
-- [ ] Connect tension display and cable-break outcome.
-- [ ] Confirm near/far load inertia is observable.
-- [ ] Verify pickup and target positions are reachable from one base position.
-- [ ] Perform a complete transfer with the base fixed.
+- [x] Move the cable onto the crane so it can hook any `CableLoad`.
+- [x] Add rope elasticity (soft limit) and slow slack take-up.
+- [x] Lab check of the single-rope version (user confirmed).
+- [x] Add jib slew and trolley travel in polar form with end stops.
+- [x] Add the four-rope rig with whole-rig overload.
+- [x] Add the follow camera (zoom, orbit) and the landing footprint marker.
+- [ ] Play-test in the port scene; tune stiffness, damping, and rates so a careful lift of the heaviest class survives and a careless one fails.
 - [ ] Save a checkpoint.
 
-### Milestone 3 — Truck and modes
+### Milestone 3 — Port scene
 
-- [ ] Add chassis, wheels, steering, throttle, and braking.
-- [ ] Check the assembly mass and centre of mass.
-- [ ] Add grounded/stopped parking checks and simple outriggers.
-- [ ] Route input exclusively to the active mode.
-- [ ] Define and display travel-readiness requirements.
-- [ ] Add driving and crane camera framing.
-- [ ] Drive to the pickup, park, attach, and lift.
+- [ ] Build quay, basin, water, and ship with hold by hand in `Prototype` (Physics Notes §7).
+- [ ] Build the tower, jib, trolley, rope head, and spreader.
+- [ ] Build the container prefab with four corner anchors and place the yard.
+- [ ] Wire crane, camera, marker, and HUD.
+- [ ] Verify every hold slot and the second layer are reachable.
 - [ ] Save a checkpoint.
 
 ### Milestone 4 — Complete run
 
 - [ ] Measure incoming contact speed with rotation accounted for.
-- [ ] Add damage handling after the initial lift.
-- [ ] Add target support, footprint, release, and settling checks.
-- [ ] Add the 90-second timer and first-input start.
-- [ ] Add one authoritative success/failure outcome.
-- [ ] Add clear result text and scene-reload restart.
-- [ ] Reproduce success, rough placement, cable failure, damage, and timeout.
-- [ ] Create a feature-complete build and save a checkpoint.
+- [ ] Add damage handling after the first lift.
+- [x] Add hold bounds, released, and at-rest checks for delivery (`RunManager`).
+- [ ] Add lost-container and knocked-off handling.
+- [x] Add the 90-second timer with first-input start.
+- [x] Add score, one authoritative outcome, result text, and scene-reload restart.
+- [ ] Reproduce ship full, timeout, cable failure, damaged container, and lost container.
+- [ ] Save a checkpoint.
 
-### Milestone 5 — Tuning and usability
+### Milestone 5 — Visual presentation
 
-- [ ] Test braking distance and low-speed steering.
-- [ ] Tune arm/trolley acceleration and hoist speed.
-- [ ] Confirm cautious input permits safe completion at the normal break rating.
-- [ ] Confirm excessive movement can produce a demonstrable overload.
-- [ ] Tune the yard and target for a careful run with recovery time.
-- [ ] Check visibility of beam height, target alignment, and cable state.
-- [ ] Make blocked actions understandable through short prompts.
+- [ ] Materials and colours for quay, ship, water, crane, and container classes.
+- [ ] Lighting and shadows that show load height.
+- [ ] Cable colour and tension bar driven by measured tension, rating marked.
+- [ ] Hook-in-reach highlight on the candidate container.
+- [ ] Landing dust, impact and cable-break camera shake, floating score text.
+- [ ] Replace the debug text with the player HUD.
+- [ ] Save a checkpoint.
+
+### Milestone 6 — Tuning and usability
+
+- [ ] Tune trolley and hoist rates for a shift that leaves room for one recovery.
+- [ ] Confirm cautious input completes the heaviest class at the normal rating.
+- [ ] Confirm excessive movement produces a demonstrable overload.
+- [ ] Balance class scores, landing multipliers, and the time bonus.
+- [ ] Check readability of height, alignment, and cable state.
 - [ ] Freeze features and save a checkpoint.
 
-### Milestone 6 — Delivery
+### Milestone 7 — Delivery
 
 - [ ] Run the full validation matrix.
 - [ ] Create the Windows release candidate.
-- [ ] Test launch, complete run, failures, and restart outside the Editor.
+- [ ] Test launch, a complete shift, each ending, and restart outside the Editor.
 - [ ] Remove or disable development-only shortcuts in the delivered build.
 - [ ] Prepare controls, editor version, physics notes, and known limitations.
-- [ ] Verify the project and build packages are complete.
 - [ ] Record the final tested revision and build location.
-
-### Milestone 7 — Stabilisation
-
-- [ ] Address only reproducible delivery blockers.
-- [ ] Re-run affected tests after each fix.
-- [ ] Rebuild and smoke-test the actual final package.
-- [ ] Avoid new features, dependencies, and engine upgrades.
+- [ ] After this point, address only reproducible delivery blockers and re-test after each fix.
 
 ## 4. How each work session runs
 
@@ -127,19 +119,18 @@ Do not mark a build or playtest as passed without evidence from that environment
 
 ### Simplify first
 
-1. Decorative yard geometry.
-2. Camera transitions and presentation effects.
-3. Outrigger movement animation.
-4. Numerical score beyond clean/rough result and remaining time.
-5. Extra developer visualization.
+1. Decorative quay and ship geometry.
+2. Camera shake and particle effects.
+3. Floating score text.
+4. Knock-on damage scoring.
+5. Extra developer visualisation.
 
 ### Preserve
 
-- The four physics topics.
-- Adjustable cable and physical release.
-- Separate drive/crane modes.
-- One complete pickup-to-placement run.
-- Tension failure, impact result, timer, and restart.
+- Pendulum swing from trolley motion, measured tension, and cable failure.
+- Elastic cable and physical release.
+- Impact-graded landings and physical stacking.
+- One complete scored shift with timer, result, and restart.
 - A tested standalone build.
 
 If the protected scope no longer fits, record the remaining work and request a concrete scope decision. Do not silently replace required physics with animation or deliver an untested build as complete.
